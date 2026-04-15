@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>食欲記録 eVAS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:   #1a6fa8;
+      --primary-light: #e8f3fb;
+      --accent:    #0e9e6e;
+      --accent-light: #e6f7f2;
+      --bg:        #f0f4f9;
+      --card:      #ffffff;
+      --text:      #1a1f2e;
+      --muted:     #6b7a8d;
+      --border:    #dbe4ee;
+      --warn:      #e67e22;
+      --radius:    16px;
+      --shadow:    0 2px 16px rgba(26,111,168,0.10);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans JP', 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--primary);
+      color: #fff;
+      padding: 28px 20px 24px;
+      text-align: center;
+    }
+    .header h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.04em; }
+    .header p  { font-size: 0.78rem; opacity: 0.85; margin-top: 7px; line-height: 1.7; }
+
+    .content { padding: 20px 16px 0; }
+
+    /* ── 共通カード ── */
+    .id-card, .day-card, .timing-card, .sleep-card, .vas-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px 18px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+    .id-card     { animation: fadeUp 0.30s ease both; border-left: 4px solid var(--primary); }
+    .day-card    { animation: fadeUp 0.32s ease both; border-left: 4px solid var(--primary); }
+    .timing-card { animation: fadeUp 0.35s ease both; border-left: 4px solid var(--primary); }
+    .sleep-card  { border-left: 4px solid var(--primary); }
+    .vas-card    { animation: fadeUp 0.40s ease both; padding: 22px 18px 20px; }
+
+    .vas-card:nth-child(2) { animation-delay: 0.06s; }
+    .vas-card:nth-child(3) { animation-delay: 0.12s; }
+    .vas-card:nth-child(4) { animation-delay: 0.18s; }
+    .vas-card:nth-child(5) { animation-delay: 0.24s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── ID input ── */
+    input#subject-id {
+      width: 100%; padding: 14px 16px;
+      font-family: inherit; font-size: 1.1rem; font-weight: 600;
+      color: var(--text); background: var(--primary-light);
+      border: 2px solid var(--border); border-radius: 10px;
+      outline: none; transition: border-color 0.2s; letter-spacing: 0.1em;
+    }
+    input#subject-id:focus, input#subject-id.filled { border-color: var(--primary); background: #fff; }
+
+    /* ── ボタングループ共通 ── */
+    .day-btn-group {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    }
+    .timing-btn-group {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    }
+    .day-btn, .timing-btn {
+      padding: 14px 4px;
+      font-family: inherit; font-size: 0.88rem; font-weight: 700;
+      color: var(--muted); background: var(--bg);
+      border: 2px solid var(--border); border-radius: 10px;
+      cursor: pointer; text-align: center; line-height: 1.45;
+      transition: all 0.15s; -webkit-tap-highlight-color: transparent;
+    }
+    .day-btn:active, .timing-btn:active { transform: scale(0.95); }
+    .day-btn.active, .timing-btn.active {
+      background: var(--primary); border-color: var(--primary);
+      color: #fff; box-shadow: 0 3px 10px rgba(26,111,168,0.3);
+    }
+
+    /* ── エラーメッセージ共通 ── */
+    .err-msg {
+      font-size: 0.75rem; color: #c62828; margin-top: 6px; display: none;
+    }
+
+    /* ── 就寝・起床時刻アコーディオン ── */
+    .sleep-card-wrap {
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      margin-bottom: 0;
+      transition: max-height 0.38s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
+    }
+    .sleep-card-wrap.open {
+      max-height: 320px;
+      opacity: 1;
+      margin-bottom: 14px;
+    }
+    .sleep-time-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .sleep-time-item label {
+      display: block; font-size: 0.78rem; font-weight: 700;
+      color: var(--muted); margin-bottom: 7px; letter-spacing: 0.04em;
+    }
+    /* ── ドラムロールピッカー ── */
+    .drum-picker {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; user-select: none;
+    }
+    .drum-picker .colon {
+      font-size: 1.5rem; font-weight: 700; color: var(--primary);
+      padding-bottom: 2px;
+    }
+    .drum-col {
+      display: flex; flex-direction: column; align-items: center;
+      width: 72px;
+    }
+    .drum-col label {
+      font-size: 0.7rem; font-weight: 700; color: var(--muted);
+      letter-spacing: 0.06em; margin-bottom: 6px;
+    }
+    .drum-viewport {
+      width: 72px; height: 132px;
+      overflow: hidden; position: relative;
+      border: 2px solid var(--border); border-radius: 12px;
+      background: var(--primary-light);
+      cursor: grab;
+    }
+    .drum-viewport.selected { border-color: var(--primary); background: #fff; }
+    .drum-viewport::before,
+    .drum-viewport::after {
+      content: ""; position: absolute; left: 0; right: 0; height: 40px;
+      z-index: 2; pointer-events: none;
+    }
+    .drum-viewport::before {
+      top: 0;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.85), transparent);
+    }
+    .drum-viewport::after {
+      bottom: 0;
+      background: linear-gradient(to top, rgba(255,255,255,0.85), transparent);
+    }
+    .drum-highlight {
+      position: absolute; left: 4px; right: 4px;
+      top: 50%; transform: translateY(-50%);
+      height: 44px; border-radius: 8px;
+      background: rgba(26,111,168,0.12);
+      pointer-events: none; z-index: 1;
+    }
+    .drum-list {
+      display: flex; flex-direction: column; align-items: center;
+      transition: transform 0.18s cubic-bezier(0.25,0.46,0.45,0.94);
+      will-change: transform;
+    }
+    .drum-item {
+      height: 44px; line-height: 44px;
+      font-size: 1.25rem; font-weight: 700;
+      color: var(--muted); text-align: center; width: 72px;
+      transition: color 0.15s, font-size 0.15s;
+    }
+    .drum-item.active { color: var(--primary); font-size: 1.35rem; }
+
+    /* ── VAS スライダー ── */
+    .vas-card .q-num {
+      font-size: 0.7rem; font-weight: 700; color: var(--primary);
+      letter-spacing: 0.1em; margin-bottom: 5px;
+    }
+    .vas-card .question {
+      font-size: 1rem; font-weight: 700; line-height: 1.55; margin-bottom: 20px;
+    }
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 7px; border-radius: 4px;
+      outline: none; cursor: pointer; background: var(--border);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary); border: 3px solid #fff;
+      box-shadow: 0 2px 10px rgba(26,111,168,0.38);
+      cursor: pointer; transition: transform 0.12s;
+    }
+    input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.18); }
+    input[type="range"]::-moz-range-thumb {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary); border: 3px solid #fff;
+      box-shadow: 0 2px 10px rgba(26,111,168,0.38); cursor: pointer;
+    }
+    .vas-labels { display: flex; justify-content: space-between; margin-top: 10px; }
+    .vas-labels span {
+      font-size: 0.75rem; color: var(--muted); line-height: 1.4; max-width: 100px;
+    }
+    .vas-labels span:first-child { text-align: left; }
+    .vas-labels span:last-child  { text-align: right; }
+
+    /* ── 保存ボタン ── */
+    #save-btn {
+      display: block; width: 100%; padding: 18px;
+      background: var(--accent); color: #fff; border: none;
+      border-radius: var(--radius); font-size: 1.05rem;
+      font-weight: 700; font-family: inherit; cursor: pointer;
+      margin-top: 20px; letter-spacing: 0.06em;
+      box-shadow: 0 4px 14px rgba(14,158,110,0.35);
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+    #save-btn:active   { transform: scale(0.97); box-shadow: none; }
+    #save-btn:disabled { background: #aaa; box-shadow: none; cursor: not-allowed; }
+
+    #status {
+      text-align: center; margin-top: 18px;
+      font-size: 0.92rem; font-weight: 700;
+      min-height: 1.6em; line-height: 1.6; padding: 0 8px;
+    }
+    .st-ok   { color: var(--accent); }
+    .st-err  { color: #c62828; }
+    .st-wait { color: var(--muted); }
+
+    footer {
+      text-align: center; margin-top: 32px;
+      font-size: 0.72rem; color: var(--muted); opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>食欲・空腹感の記録</h1>
+  <p>現在の状態に最も当てはまると思える位置に<br>スライダーを動かしてください。<br>最後に「記録を保存する」を押してください。</p>
+</div>
+
+<div class="content">
+
+  <!-- ① 対象者ID -->
+  <div class="id-card">
+    <div class="card-title">対象者IDを入力してください</div>
+    <input type="number" id="subject-id" inputmode="numeric" pattern="[0-9]*" placeholder="例：1001">
+    <p class="err-msg" id="id-required">※ IDを入力してください</p>
+  </div>
+
+  <!-- ② 何日目か -->
+  <div class="day-card">
+    <div class="card-title">何日目の測定かを選んでください</div>
+    <div class="day-btn-group">
+      <button type="button" class="day-btn" data-day="0">前日</button>
+      <button type="button" class="day-btn" data-day="1">1日目</button>
+      <button type="button" class="day-btn" data-day="2">2日目</button>
+      <button type="button" class="day-btn" data-day="3">3日目</button>
+    </div>
+    <p class="err-msg" id="day-required">※ 日数を選択してください</p>
+  </div>
+
+  <!-- ③ タイミング選択 -->
+  <div class="timing-card">
+    <div class="card-title">測定タイミングを選んでください</div>
+    <div class="timing-btn-group">
+      <button type="button" class="timing-btn" data-timing="before_sleep">就寝直前</button>
+      <button type="button" class="timing-btn" data-timing="after_wake">起床直後</button>
+      <button type="button" class="timing-btn" data-timing="meal_0">食事開始時点</button>
+    </div>
+    <p class="err-msg" id="timing-required">※ タイミングを選択してください</p>
+  </div>
+
+  <!-- ④ 就寝・起床時刻（起床直後のときのみ展開） -->
+  <div class="sleep-card-wrap" id="sleep-card-wrap">
+    <div class="sleep-card">
+      <div class="card-title">就寝・起床時刻を入力してください</div>
+      <div class="drum-picker">
+        <!-- 就寝 -->
+        <div class="drum-col">
+          <label>就寝 時</label>
+          <div class="drum-viewport" id="sleep-h-vp">
+            <div class="drum-highlight"></div>
+            <div class="drum-list" id="sleep-h-list"></div>
+          </div>
+        </div>
+        <div class="colon">:</div>
+        <div class="drum-col">
+          <label>就寝 分</label>
+          <div class="drum-viewport" id="sleep-m-vp">
+            <div class="drum-highlight"></div>
+            <div class="drum-list" id="sleep-m-list"></div>
+          </div>
+        </div>
+        <div style="width:20px"></div>
+        <!-- 起床 -->
+        <div class="drum-col">
+          <label>起床 時</label>
+          <div class="drum-viewport" id="wake-h-vp">
+            <div class="drum-highlight"></div>
+            <div class="drum-list" id="wake-h-list"></div>
+          </div>
+        </div>
+        <div class="colon">:</div>
+        <div class="drum-col">
+          <label>起床 分</label>
+          <div class="drum-viewport" id="wake-m-vp">
+            <div class="drum-highlight"></div>
+            <div class="drum-list" id="wake-m-list"></div>
+          </div>
+        </div>
+      </div>
+      <p class="err-msg" id="sleep-required">※ 就寝・起床時刻を選択してください</p>
+    </div>
+  </div>
+
+  <!-- ⑤ VAS 質問群 -->
+  <div class="vas-card">
+    <div class="q-num">Q1</div>
+    <div class="question">今、どれくらい空腹ですか？</div>
+    <input type="range" min="0" max="100" step="0.1" value="50" id="hunger-slider">
+    <div class="vas-labels">
+      <span>まったく<br>空腹でない</span>
+      <span>非常に<br>空腹である</span>
+    </div>
+  </div>
+
+  <div class="vas-card">
+    <div class="q-num">Q2</div>
+    <div class="question">今、どれくらい満腹ですか？</div>
+    <input type="range" min="0" max="100" step="0.1" value="50" id="satiety-slider">
+    <div class="vas-labels">
+      <span>まったく<br>満腹でない</span>
+      <span>非常に<br>満腹である</span>
+    </div>
+  </div>
+
+  <div class="vas-card">
+    <div class="q-num">Q3</div>
+    <div class="question">今、どれくらい食事を食べたいですか？</div>
+    <input type="range" min="0" max="100" step="0.1" value="50" id="desire-slider">
+    <div class="vas-labels">
+      <span>まったく<br>食べたくない</span>
+      <span>非常に<br>食べたい</span>
+    </div>
+  </div>
+
+  <div class="vas-card">
+    <div class="q-num">Q4</div>
+    <div class="question">今、どれくらい食事を食べられますか？</div>
+    <input type="range" min="0" max="100" step="0.1" value="50" id="capacity-slider">
+    <div class="vas-labels">
+      <span>まったく<br>食べられない</span>
+      <span>非常に<br>食べられる</span>
+    </div>
+  </div>
+
+  <button id="save-btn">記録を保存する</button>
+  <p id="status"></p>
+  <footer>本フォームは研究目的で使用されます</footer>
+
+</div>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx2QJBx4GTxXr38VbxyXqgCsxkHm102iW7SZ4NIdbh53hjU4D6Cp1idFYxQ945IHek34g/exec";
+
+const sliderMap = [
+  { slider: document.getElementById("hunger-slider")   },
+  { slider: document.getElementById("satiety-slider")  },
+  { slider: document.getElementById("desire-slider")   },
+  { slider: document.getElementById("capacity-slider") },
+];
+
+function updateRail(slider) {
+  const v = parseFloat(slider.value);
+  slider.style.background =
+    `linear-gradient(to right, var(--primary) 0%, var(--primary) ${v}%, var(--border) ${v}%, var(--border) 100%)`;
+}
+sliderMap.forEach(({ slider }) => {
+  slider.addEventListener("input", () => updateRail(slider));
+  updateRail(slider);
+});
+
+// ── ドラムロールピッカー ──
+const ITEM_H = 44;
+const PADDING_ITEMS = 1; // 上下の空白アイテム数
+
+function buildDrum(listEl, vpEl, items, defaultIndex, onChange) {
+  // パディングアイテムを前後に追加
+  const pad = Array(PADDING_ITEMS).fill("");
+  const allItems = [...pad, ...items, ...pad];
+
+  allItems.forEach((v, i) => {
+    const div = document.createElement("div");
+    div.className = "drum-item";
+    div.textContent = v;
+    listEl.appendChild(div);
+  });
+
+  let currentIndex = defaultIndex; // itemsの中でのインデックス
+  let startY = 0, startTranslate = 0, isDragging = false;
+
+  function getTranslate(idx) {
+    return -(idx + PADDING_ITEMS) * ITEM_H + (132 / 2 - ITEM_H / 2);
+  }
+
+  function applyIndex(idx, animate) {
+    idx = Math.max(0, Math.min(items.length - 1, idx));
+    currentIndex = idx;
+    const t = getTranslate(idx);
+    if (!animate) listEl.style.transition = "none";
+    listEl.style.transform = `translateY(${t}px)`;
+    if (!animate) {
+      listEl.offsetHeight; // reflow
+      listEl.style.transition = "";
+    }
+    // active class
+    listEl.querySelectorAll(".drum-item").forEach((el, i) => {
+      el.classList.toggle("active", i === idx + PADDING_ITEMS);
+    });
+    vpEl.classList.toggle("selected", true);
+    onChange(items[idx]);
+  }
+
+  // 初期値セット
+  applyIndex(defaultIndex, false);
+
+  // タッチ
+  vpEl.addEventListener("touchstart", e => {
+    startY = e.touches[0].clientY;
+    startTranslate = getTranslate(currentIndex);
+    isDragging = true;
+    listEl.style.transition = "none";
+  }, { passive: true });
+
+  vpEl.addEventListener("touchmove", e => {
+    if (!isDragging) return;
+    const dy = e.touches[0].clientY - startY;
+    listEl.style.transform = `translateY(${startTranslate + dy}px)`;
+  }, { passive: true });
+
+  vpEl.addEventListener("touchend", e => {
+    if (!isDragging) return;
+    isDragging = false;
+    listEl.style.transition = "";
+    const dy = e.changedTouches[0].clientY - startY;
+    const movedItems = Math.round(-dy / ITEM_H);
+    applyIndex(currentIndex + movedItems, true);
+  });
+
+  // マウス（デスクトップ用）
+  vpEl.addEventListener("mousedown", e => {
+    startY = e.clientY;
+    startTranslate = getTranslate(currentIndex);
+    isDragging = true;
+    listEl.style.transition = "none";
+    e.preventDefault();
+  });
+  window.addEventListener("mousemove", e => {
+    if (!isDragging) return;
+    const dy = e.clientY - startY;
+    listEl.style.transform = `translateY(${startTranslate + dy}px)`;
+  });
+  window.addEventListener("mouseup", e => {
+    if (!isDragging) return;
+    isDragging = false;
+    listEl.style.transition = "";
+    const dy = e.clientY - startY;
+    const movedItems = Math.round(-dy / ITEM_H);
+    applyIndex(currentIndex + movedItems, true);
+  });
+
+  // クリックで上下移動
+  vpEl.addEventListener("click", e => {
+    const rect = vpEl.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    if (y < 44) applyIndex(currentIndex - 1, true);
+    else if (y > 88) applyIndex(currentIndex + 1, true);
+  });
+
+  return { getValue: () => items[currentIndex], reset: () => applyIndex(defaultIndex, false) };
+}
+
+const hours   = Array.from({length: 24}, (_, i) => String(i).padStart(2, "0"));
+const minutes = Array.from({length: 12}, (_, i) => String(i * 5).padStart(2, "0"));
+
+const sleepHDrum = buildDrum(
+  document.getElementById("sleep-h-list"),
+  document.getElementById("sleep-h-vp"),
+  hours, 22,
+  () => { document.getElementById("sleep-required").style.display = "none"; }
+);
+const sleepMDrum = buildDrum(
+  document.getElementById("sleep-m-list"),
+  document.getElementById("sleep-m-vp"),
+  minutes, 0,
+  () => {}
+);
+const wakeHDrum = buildDrum(
+  document.getElementById("wake-h-list"),
+  document.getElementById("wake-h-vp"),
+  hours, 6,
+  () => { document.getElementById("sleep-required").style.display = "none"; }
+);
+const wakeMDrum = buildDrum(
+  document.getElementById("wake-m-list"),
+  document.getElementById("wake-m-vp"),
+  minutes, 0,
+  () => {}
+);
+
+function getSleepTime() { return sleepHDrum.getValue() + ":" + sleepMDrum.getValue(); }
+function getWakeTime()  { return wakeHDrum.getValue()  + ":" + wakeMDrum.getValue();  }
+
+const sleepCardWrap = document.getElementById("sleep-card-wrap");
+
+function resetAll() {
+  sliderMap.forEach(({ slider }) => { slider.value = 50; updateRail(slider); });
+  document.querySelectorAll(".day-btn").forEach(b => b.classList.remove("active"));
+  selectedDay = null;
+  document.querySelectorAll(".timing-btn").forEach(b => b.classList.remove("active"));
+  selectedTiming = null;
+  sleepHDrum.reset(); sleepMDrum.reset();
+  wakeHDrum.reset();  wakeMDrum.reset();
+  sleepCardWrap.classList.remove("open");
+  subjectIdEl.value = "";
+  subjectIdEl.classList.remove("filled");
+}
+
+// 日数ボタン
+let selectedDay = null;
+document.querySelectorAll(".day-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".day-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedDay = btn.dataset.day;
+    document.getElementById("day-required").style.display = "none";
+  });
+});
+
+// タイミングボタン
+let selectedTiming = null;
+document.querySelectorAll(".timing-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".timing-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedTiming = btn.dataset.timing;
+    document.getElementById("timing-required").style.display = "none";
+
+    // 起床直後のみ時刻欄を展開
+    if (selectedTiming === "after_wake") {
+      sleepCardWrap.classList.add("open");
+    } else {
+      sleepCardWrap.classList.remove("open");
+      // ドラムロールはリセット不要（デフォルト位置を維持）
+      document.getElementById("sleep-required").style.display = "none";
+    }
+  });
+});
+
+// ID入力
+const subjectIdEl = document.getElementById("subject-id");
+subjectIdEl.addEventListener("input", () => {
+  subjectIdEl.value = subjectIdEl.value.replace(/[^0-9]/g, "");
+  subjectIdEl.classList.toggle("filled", subjectIdEl.value !== "");
+  if (subjectIdEl.value !== "") document.getElementById("id-required").style.display = "none";
+});
+
+function getTimestamp() {
+  const d = new Date(), pad = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
+document.getElementById("save-btn").addEventListener("click", async () => {
+  const statusEl  = document.getElementById("status");
+  const btn       = document.getElementById("save-btn");
+  const subjectId = subjectIdEl.value.trim();
+
+  if (!subjectId) {
+    document.getElementById("id-required").style.display = "block";
+    subjectIdEl.focus(); statusEl.textContent = ""; return;
+  }
+  if (selectedDay === null) {
+    document.getElementById("day-required").style.display = "block";
+    statusEl.textContent = ""; return;
+  }
+  if (selectedTiming === null) {
+    document.getElementById("timing-required").style.display = "block";
+    statusEl.textContent = ""; return;
+  }
+  // ドラムロールは常に値があるので、after_wake時の追加バリデーション不要
+  // （ピッカーが選択済みであることは常に保証される）
+
+  btn.disabled = true;
+  statusEl.textContent = "送信中…";
+  statusEl.className   = "st-wait";
+
+  const payload = {
+    timestamp:  getTimestamp(),
+    subject_id: subjectId,
+    study_day:  selectedDay,
+    timing:     selectedTiming,
+    sleep_time: selectedTiming === "after_wake" ? getSleepTime() : "",
+    wake_time:  selectedTiming === "after_wake" ? getWakeTime()  : "",
+    hunger:     document.getElementById("hunger-slider").value,
+    satiety:    document.getElementById("satiety-slider").value,
+    desire:     document.getElementById("desire-slider").value,
+    capacity:   document.getElementById("capacity-slider").value,
+  };
+
+  try {
+    await fetch(GAS_URL, {
+      method: "POST", mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    resetAll();
+    statusEl.innerHTML = "✅ 記録が完了しました。<br>ありがとうございました。";
+    statusEl.className = "st-ok";
+  } catch (err) {
+    statusEl.textContent = "❌ 通信エラーです。電波状況を確認してください。";
+    statusEl.className   = "st-err";
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
