@@ -129,33 +129,42 @@
       display: block; font-size: 0.78rem; font-weight: 700;
       color: var(--muted); margin-bottom: 7px; letter-spacing: 0.04em;
     }
-    /* ── 時刻セレクト ── */
+    /* ── 時刻直接入力 ── */
     .time-row {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
     }
-    .time-item label {
-      display: block; font-size: 0.78rem; font-weight: 700;
-      color: var(--muted); margin-bottom: 7px; letter-spacing: 0.04em;
+    .time-block {
+      display: flex; flex-direction: column; gap: 8px;
     }
-    .select-wrap {
-      position: relative;
+    .time-block-label {
+      font-size: 0.78rem; font-weight: 700;
+      color: var(--muted); letter-spacing: 0.04em;
     }
-    .select-wrap::after {
-      content: "▼"; font-size: 0.65rem; color: var(--primary);
-      position: absolute; right: 13px; top: 50%;
-      transform: translateY(-50%); pointer-events: none;
+    .time-inputs {
+      display: flex; align-items: center; gap: 6px;
     }
-    select.time-select {
-      width: 100%; padding: 14px 34px 14px 14px;
-      font-family: inherit; font-size: 1.05rem; font-weight: 600;
-      color: var(--text); background: var(--primary-light);
+    .time-inputs .colon {
+      font-size: 1.4rem; font-weight: 700; color: var(--primary);
+      line-height: 1; padding-bottom: 2px;
+    }
+    .time-input-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1;
+    }
+    .time-input-wrap span {
+      font-size: 0.65rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em;
+    }
+    input.time-num {
+      width: 100%; padding: 12px 6px;
+      font-family: inherit; font-size: 1.3rem; font-weight: 700;
+      color: var(--primary); background: var(--primary-light);
       border: 2px solid var(--border); border-radius: 10px;
-      appearance: none; -webkit-appearance: none;
-      outline: none; cursor: pointer;
+      outline: none; text-align: center;
       transition: border-color 0.2s;
+      -moz-appearance: textfield;
     }
-    select.time-select:focus,
-    select.time-select.selected { border-color: var(--primary); background: #fff; }
+    input.time-num::-webkit-inner-spin-button,
+    input.time-num::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input.time-num:focus { border-color: var(--primary); background: #fff; }
 
     /* ── VAS スライダー ── */
     .vas-card .q-num {
@@ -262,104 +271,34 @@
     <div class="sleep-card">
       <div class="card-title">就寝・起床時刻を入力してください</div>
       <div class="time-row">
-        <div class="time-item">
-          <label>就寝時刻（時）</label>
-          <div class="select-wrap">
-            <select class="time-select" id="sleep-h">
-          <option value="00">00時</option>
-          <option value="01">01時</option>
-          <option value="02">02時</option>
-          <option value="03">03時</option>
-          <option value="04">04時</option>
-          <option value="05">05時</option>
-          <option value="06">06時</option>
-          <option value="07">07時</option>
-          <option value="08">08時</option>
-          <option value="09">09時</option>
-          <option value="10">10時</option>
-          <option value="11">11時</option>
-          <option value="12">12時</option>
-          <option value="13">13時</option>
-          <option value="14">14時</option>
-          <option value="15">15時</option>
-          <option value="16">16時</option>
-          <option value="17">17時</option>
-          <option value="18">18時</option>
-          <option value="19">19時</option>
-          <option value="20">20時</option>
-          <option value="21">21時</option>
-          <option value="22" selected>22時</option>
-          <option value="23">23時</option>
-            </select>
+        <!-- 就寝時刻 -->
+        <div class="time-block">
+          <div class="time-block-label">就寝時刻</div>
+          <div class="time-inputs">
+            <div class="time-input-wrap">
+              <input class="time-num" type="number" id="sleep-h" min="0" max="23" value="22" inputmode="numeric">
+              <span>時</span>
+            </div>
+            <div class="colon">:</div>
+            <div class="time-input-wrap">
+              <input class="time-num" type="number" id="sleep-m" min="0" max="59" value="00" inputmode="numeric">
+              <span>分</span>
+            </div>
           </div>
         </div>
-        <div class="time-item">
-          <label>就寝時刻（分）</label>
-          <div class="select-wrap">
-            <select class="time-select" id="sleep-m">
-          <option value="00" selected>00分</option>
-          <option value="05">05分</option>
-          <option value="10">10分</option>
-          <option value="15">15分</option>
-          <option value="20">20分</option>
-          <option value="25">25分</option>
-          <option value="30">30分</option>
-          <option value="35">35分</option>
-          <option value="40">40分</option>
-          <option value="45">45分</option>
-          <option value="50">50分</option>
-          <option value="55">55分</option>
-            </select>
-          </div>
-        </div>
-        <div class="time-item">
-          <label>起床時刻（時）</label>
-          <div class="select-wrap">
-            <select class="time-select" id="wake-h">
-          <option value="00">00時</option>
-          <option value="01">01時</option>
-          <option value="02">02時</option>
-          <option value="03">03時</option>
-          <option value="04">04時</option>
-          <option value="05">05時</option>
-          <option value="06" selected>06時</option>
-          <option value="07">07時</option>
-          <option value="08">08時</option>
-          <option value="09">09時</option>
-          <option value="10">10時</option>
-          <option value="11">11時</option>
-          <option value="12">12時</option>
-          <option value="13">13時</option>
-          <option value="14">14時</option>
-          <option value="15">15時</option>
-          <option value="16">16時</option>
-          <option value="17">17時</option>
-          <option value="18">18時</option>
-          <option value="19">19時</option>
-          <option value="20">20時</option>
-          <option value="21">21時</option>
-          <option value="22">22時</option>
-          <option value="23">23時</option>
-            </select>
-          </div>
-        </div>
-        <div class="time-item">
-          <label>起床時刻（分）</label>
-          <div class="select-wrap">
-            <select class="time-select" id="wake-m">
-          <option value="00" selected>00分</option>
-          <option value="05">05分</option>
-          <option value="10">10分</option>
-          <option value="15">15分</option>
-          <option value="20">20分</option>
-          <option value="25">25分</option>
-          <option value="30">30分</option>
-          <option value="35">35分</option>
-          <option value="40">40分</option>
-          <option value="45">45分</option>
-          <option value="50">50分</option>
-          <option value="55">55分</option>
-            </select>
+        <!-- 起床時刻 -->
+        <div class="time-block">
+          <div class="time-block-label">起床時刻</div>
+          <div class="time-inputs">
+            <div class="time-input-wrap">
+              <input class="time-num" type="number" id="wake-h" min="0" max="23" value="6" inputmode="numeric">
+              <span>時</span>
+            </div>
+            <div class="colon">:</div>
+            <div class="time-input-wrap">
+              <input class="time-num" type="number" id="wake-m" min="0" max="59" value="00" inputmode="numeric">
+              <span>分</span>
+            </div>
           </div>
         </div>
       </div>
@@ -440,13 +379,25 @@ const sleepMEl = document.getElementById("sleep-m");
 const wakeHEl  = document.getElementById("wake-h");
 const wakeMEl  = document.getElementById("wake-m");
 
-function getSleepTime() { return sleepHEl.value + ":" + sleepMEl.value; }
-function getWakeTime()  { return wakeHEl.value  + ":" + wakeMEl.value;  }
+function pad2(v) { return String(parseInt(v) || 0).padStart(2, "0"); }
+function getSleepTime() { return pad2(sleepHEl.value) + ":" + pad2(sleepMEl.value); }
+function getWakeTime()  { return pad2(wakeHEl.value)  + ":" + pad2(wakeMEl.value);  }
 
 function resetTimeSelects() {
-  sleepHEl.value = "22"; sleepMEl.value = "00";
-  wakeHEl.value  = "06"; wakeMEl.value  = "00";
+  sleepHEl.value = "22"; sleepMEl.value = "0";
+  wakeHEl.value  = "6";  wakeMEl.value  = "0";
 }
+
+// 範囲外の値を自動補正
+[{ el: sleepHEl, max: 23 }, { el: sleepMEl, max: 59 },
+ { el: wakeHEl,  max: 23 }, { el: wakeMEl,  max: 59 }].forEach(({ el, max }) => {
+  el.addEventListener("change", () => {
+    let v = parseInt(el.value);
+    if (isNaN(v) || v < 0) v = 0;
+    if (v > max) v = max;
+    el.value = v;
+  });
+});
 
 const sleepCardWrap = document.getElementById("sleep-card-wrap");
 
